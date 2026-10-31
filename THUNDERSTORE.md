@@ -4,7 +4,7 @@ Killed or knocked-out **zombies** have a chance to drop an item.
 
 Only the **host** needs this mod. The drop is spawned for everyone.
 
-Default: **25%** chance, **one** item from the **Roots luggage** pool. A shotgun knockout counts; each zombie rolls at most once.
+Default: **25%** chance, **one** item: **First Aid Kit** or **Bandages**. A shotgun knockout counts; each zombie rolls at most once.
 
 ## Configuration
 
@@ -14,7 +14,7 @@ After one launch, edit `BepInEx/config/PeakZombieLoot.cfg`:
 |---|---|---|
 | `Enabled` | `true` | Host only: zombies can drop loot |
 | `ChancePercent` | `25` | Percent chance (0–100) |
-| `Items` | empty | Comma-separated item names. Empty = roll from `LootPool` |
+| `Items` | `FirstAidKit,Bandages` | Comma-separated item names. Empty = roll from `LootPool` |
 | `LootPool` | `LuggageRoots` | PEAK spawn pool when `Items` is empty |
 | `Count` | `1` | Items spawned on a successful roll |
 | `DropOnPassOut` | `true` | Also roll when a zombie is knocked out |

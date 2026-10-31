@@ -32,7 +32,7 @@ This mod does not add a new item. It waits for a mushroom zombie to be knocked o
 
 Vanilla PEAK only calls `MushroomZombie.Die` after the zombie has been awake longer than `lifetime` (120 s) and then passes out or falls. That is why `DropOnPassOut` defaults on: a knockout is what players treat as a kill. Each zombie is recorded in `DroppedKeys` so the later Dead state does not drop twice.
 
-`Items` empty → `LootData.GetAllItemsInPool` + `Item.IsValidToSpawn` + rarity weights (same as luggage). Named items match prefab name or `UIData.itemName`.
+`Items` default is `FirstAidKit,Bandages` (equal chance). Empty → `LootData.GetAllItemsInPool` + `Item.IsValidToSpawn` + rarity weights (same as luggage). Named items match prefab name or `UIData.itemName`.
 
 Every entry point that runs inside PEAK's own code (a Harmony patch) goes through `Plugin.Guard`, which logs and swallows exceptions. An exception escaping a patch aborts the game method that called it.
 

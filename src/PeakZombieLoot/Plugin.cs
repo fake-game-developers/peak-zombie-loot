@@ -42,8 +42,9 @@ public partial class Plugin : BaseUnityPlugin
     /// <summary>
     /// Comma-separated item names. Empty = pick from <see cref="LootPoolName"/>.
     /// Matches an item's prefab name or UI name (case-insensitive).
+    /// Default: First Aid Kit and Bandages.
     /// </summary>
-    internal static string ItemsRaw => items?.Value ?? "";
+    internal static string ItemsRaw => items?.Value ?? "FirstAidKit,Bandages";
 
     /// <summary>PEAK <c>SpawnPool</c> name used when <see cref="ItemsRaw"/> is empty. Default Roots luggage.</summary>
     internal static string LootPoolName => lootPool?.Value ?? "LuggageRoots";
@@ -88,8 +89,8 @@ public partial class Plugin : BaseUnityPlugin
         items = Config.Bind(
             "Drops",
             "Items",
-            "",
-            "Comma-separated item names to pick from (prefab or UI name). Empty = roll from LootPool, the same way Roots luggage does.");
+            "FirstAidKit,Bandages",
+            "Comma-separated item names to pick from (prefab or UI name). Default is First Aid Kit and Bandages. Empty = roll from LootPool, the same way Roots luggage does.");
         lootPool = Config.Bind(
             "Drops",
             "LootPool",

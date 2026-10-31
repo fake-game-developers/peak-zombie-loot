@@ -4,7 +4,7 @@ A PEAK mod that gives a **killed or knocked-out zombie** a chance to drop an ite
 
 Only the **host** needs this mod. The item is spawned for everyone.
 
-By default each zombie rolls once: **25%** chance to drop **one** item from the same pool as **Roots luggage**. A shotgun knockout counts (the later true-death does not roll again).
+By default each zombie rolls once: **25%** chance to drop **one** item, either a **First Aid Kit** or **Bandages**. A shotgun knockout counts (the later true-death does not roll again).
 
 ## Configuration
 
@@ -14,7 +14,7 @@ After one launch, edit `BepInEx/config/PeakZombieLoot.cfg`:
 |---|---|---|---|
 | `[Drops]` | `Enabled` | `true` | Host only: dead / knocked-out zombies can drop loot |
 | `[Drops]` | `ChancePercent` | `25` | Percent chance a zombie drops loot (0–100) |
-| `[Drops]` | `Items` | empty | Comma-separated item names (prefab or UI name). Empty = roll from `LootPool` |
+| `[Drops]` | `Items` | `FirstAidKit,Bandages` | Comma-separated item names (prefab or UI name). Empty = roll from `LootPool` |
 | `[Drops]` | `LootPool` | `LuggageRoots` | PEAK spawn pool used when `Items` is empty |
 | `[Drops]` | `Count` | `1` | How many items to spawn on a successful roll (1–8) |
 | `[Drops]` | `DropOnPassOut` | `true` | Also roll when a zombie is knocked out. Off = wait until PEAK marks it Dead |
@@ -31,7 +31,7 @@ Comma-separated. Matches a prefab name or the item's UI name, case-insensitive. 
 Bandage,Energy Drink,Rope,Scout Cookies,Flare
 ```
 
-Leave `Items` empty to pick from `LootPool` with the same rarity weights as luggage.
+Leave `Items` empty to pick from `LootPool` with the same rarity weights as luggage instead of the default First Aid Kit / Bandages list.
 
 Known `LootPool` names: `LuggageRoots`, `LuggageBeach`, `LuggageJungle`, `LuggageTundra`, `LuggageCaldera`, `LuggageMesa`, `LuggageGloom`, `LuggageCitadel`, `LuggageAncient`, `LuggageCursed`, `LuggageClown`, `LuggageClimber`. Custom runs that disable an item still will not drop it.
 
