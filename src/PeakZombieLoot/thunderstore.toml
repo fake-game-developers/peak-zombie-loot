@@ -1,0 +1,39 @@
+[config]
+schemaVersion = "0.1.0"
+
+[general]
+repository = "https://thunderstore.io"
+
+[package]
+namespace = "FakeGameDevelopers"
+name = "PeakZombieLoot"
+description = "Killed or knocked-out PEAK zombies have a chance to drop an item. Host-only; chance and loot are configurable."
+websiteUrl = "https://github.com/fake-game-developers/peak-zombie-loot"
+containsNsfwContent = false
+
+[package.dependencies]
+BepInEx-BepInExPack_PEAK = "5.4.2403"
+
+[build]
+icon = "../../icon.png"
+readme = "../../THUNDERSTORE.md"
+outdir = "../../artifacts/thunderstore/"
+
+[[build.copy]]
+source = "../../artifacts/bin/Peak.ZombieLoot/release/PeakZombieLoot.dll"
+target = "plugins/"
+
+[[build.copy]]
+source = "../../CHANGELOG.md"
+target = "/"
+
+[[build.copy]]
+source = "../../LICENSE"
+target = "/"
+
+[publish]
+communities = [ "peak", ]
+
+# Fallback for a first publish. CI replaces this with the live package categories.
+[publish.categories]
+peak = [ "mods", "items", "host", "qol" ]

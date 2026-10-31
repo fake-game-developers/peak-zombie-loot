@@ -1,0 +1,153 @@
+name: Thunderstore
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Peak.ZombieLoot.slnx needs a .NET 10 SDK; global.json pins the band so the build does not depend
+      # on whatever newer SDK the runner image happens to ship.
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Download FakeGameDevelopers.PEAKGameLibs (CI refs)
+        run: |
+          set -euo pipefail
+          mkdir -p .gamelibs
+          # Public fork with stripped+publicized PEAK 2.5.a Managed refs.
+          curl -fsSL "https://github.com/fake-game-developers/PEAKGameLibs/archive/refs/heads/main.tar.gz" -o peakgamelibs.tar.gz
+          tar -xzf peakgamelibs.tar.gz
+          cp -r PEAKGameLibs-main/package/lib/. .gamelibs/
+          test -f .gamelibs/Assembly-CSharp.dll
+          echo "ManagedDir=$PWD/.gamelibs"
+
+      - name: Build Thunderstore package
+        run: |
+          set -euo pipefail
+          MANAGED_DIR="$PWD/.gamelibs"
+          dotnet build Peak.ZombieLoot.slnx -c Release -target:PackTS -v m \
+            -p:ManagedDir="$MANAGED_DIR/" \
+            -p:PeakGameRootDir=""
+
+      - name: Flatten package for direct Thunderstore upload
+        id: package
+        run: |
+          set -euo pipefail
+          # GitHub Actions wraps artifacts in a zip. Upload the *contents* of the
+          # Thunderstore package so the downloaded artifact IS a valid TS zip.
+          mkdir -p ts-artifact
+          unzip -o artifacts/thunderstore/*.zip -d ts-artifact
+          test -f ts-artifact/manifest.json
+          test -f ts-artifact/icon.png
+          test -f ts-artifact/README.md
+          echo "path=ts-artifact" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Thunderstore-ready artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Downloaded filename will be FakeGameDevelopers-PeakZombieLoot.zip — upload that to Thunderstore.
+          name: FakeGameDevelopers-PeakZombieLoot
+          path: ts-artifact/*
+          if-no-files-found: error
+
+      - name: Decide whether to publish
+        id: publish
+        run: |
+          set -euo pipefail
+          csproj=src/PeakZombieLoot/Peak.ZombieLoot.csproj
+          version=$(sed -n 's:.*<Version>\(.*\)</Version>.*:\1:p' "$csproj")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          # Publish when the csproj version is not yet the live Thunderstore release.
+          # Comparing only to the previous git commit misses bumps made while CI was red.
+          # Only a confirmed 404 counts as "never published"; any other failure stops the job.
+          url="https://thunderstore.io/api/experimental/package/FakeGameDevelopers/PeakZombieLoot/"
+          status=000
+          for attempt in 1 2 3; do
+            if ! status=$(curl -sS -A "peak-zombie-loot" --max-time 30 -o live.json -w '%{http_code}' "$url"); then
+              status=000
+            fi
+            case "$status" in
+              200|404) break ;;
+            esac
+            echo "Thunderstore lookup attempt $attempt returned HTTP $status."
+            sleep $((attempt * 10))
+          done
+
+          case "$status" in
+            404)
+              echo "No Thunderstore package yet; this is the first release."
+              publish=true
+              ;;
+            200)
+              # Anything but a semantic "x.y.z" string (null, number, missing key, bad JSON) stops the job.
+              if ! live=$(python3 -c '
+          import json, re, sys
+          v = json.load(open("live.json"))["latest"]["version_number"]
+          if not isinstance(v, str) or not re.fullmatch(r"\d+\.\d+\.\d+", v):
+              sys.exit(1)
+          print(v)
+          '); then
+                echo "Thunderstore response has no valid latest version; not deciding to publish."
+                exit 1
+              fi
+              echo "Live Thunderstore version: $live"
+              if [ "$version" = "$live" ]; then
+                echo "Version $version is already the live Thunderstore release."
+                publish=false
+              else
+                publish=true
+              fi
+              ;;
+            *)
+              echo "Could not look up the live Thunderstore release (HTTP $status); not deciding to publish."
+              exit 1
+              ;;
+          esac
+
+          echo "Version $version; publish=$publish"
+          echo "publish=$publish" >> "$GITHUB_OUTPUT"
+
+      - name: Reuse Thunderstore categories
+        if: steps.publish.outputs.publish == 'true'
+        run: python3 .github/scripts/reuse-thunderstore-categories.py
+
+      - name: Publish to Thunderstore
+        if: steps.publish.outputs.publish == 'true'
+        env:
+          TCLI_AUTH_TOKEN: ${{ secrets.TCLI_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "${TCLI_AUTH_TOKEN:-}" ]; then
+            echo "TCLI_AUTH_TOKEN secret is not set."
+            exit 1
+          fi
+          MANAGED_DIR="$PWD/.gamelibs"
+          dotnet build Peak.ZombieLoot.slnx -c Release -target:PackTS -v m \
+            -p:ManagedDir="$MANAGED_DIR/" \
+            -p:PeakGameRootDir="" \
+            -p:PublishTS=true
+
+      - name: Attach package to GitHub Release (manual runs)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "Thunderstore build ${{ github.run_number }}"
+          files: artifacts/thunderstore/*.zip
+          generate_release_notes: true
+          draft: true
